@@ -9,27 +9,60 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel (Para entender o código React no navegador) -->
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Tailwind CSS (Estilos) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Ícone da Aba -->
+    <!-- Ícone -->
     <link rel="icon" href="https://i.ibb.co/WNQBQv0L/logo-avalia-tcc.png" type="image/png">
 
     <style>
-        /* Ajustes finos para impressão */
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white; }
-            .print-container { box-shadow: none; border: none; margin: 0; padding: 0; }
+        /* CONFIGURAÇÃO DE IMPRESSÃO A4 RÍGIDA */
+        @page {
+            size: A4;
+            margin: 0;
         }
-        /* Fonte acadêmica para o relatório */
+        @media print {
+            html, body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 0;
+                background: white;
+            }
+            body * {
+                visibility: hidden;
+            }
+            .print-container, .print-container * {
+                visibility: visible;
+            }
+            .print-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 210mm;
+                min-height: 297mm;
+                padding: 20mm !important; /* Margem interna do papel */
+                margin: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: white !important;
+            }
+            .no-print { 
+                display: none !important; 
+            }
+        }
+
+        /* Fonte Serifada para Relatório */
         .font-serif { font-family: 'Times New Roman', Times, serif; }
         
-        /* Ajuste para o iframe ocupar altura total */
-        .pdf-container { height: 100%; width: 100%; }
+        /* Scrollbar suave */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -38,7 +71,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- ÍCONES (SVG Inline) ---
+        // --- ÍCONES ---
         const Icon = ({ path, size = 20, className = "" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{path}</svg>
         );
@@ -50,24 +83,19 @@
             CheckCircle: (p) => <Icon {...p} path={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>} />,
             Cloud: (p) => <Icon {...p} path={<><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></>} />,
             RefreshCw: (p) => <Icon {...p} path={<><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></>} />,
-            AlertTriangle: (p) => <Icon {...p} path={<><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>} />,
             FolderOpen: (p) => <Icon {...p} path={<><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></>} />,
             BarChart3: (p) => <Icon {...p} path={<><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>} />,
             ArrowLeft: (p) => <Icon {...p} path={<><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></>} />,
             Download: (p) => <Icon {...p} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>} />,
-            BookOpen: (p) => <Icon {...p} path={<><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>} />,
             ChevronRight: (p) => <Icon {...p} path={<><polyline points="9 18 15 12 9 6"/></>} />,
-            LogIn: (p) => <Icon {...p} path={<><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></>} />,
-            Info: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>} />,
             LinkIcon: (p) => <Icon {...p} path={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>} />,
             Upload: (p) => <Icon {...p} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>} />,
             Copy: (p) => <Icon {...p} path={<><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>} />,
             HelpCircle: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></>} />,
             X: (p) => <Icon {...p} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />,
-            Database: (p) => <Icon {...p} path={<><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>} />
+            Database: (p) => <Icon {...p} path={<><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>} />,
+            Info: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>} />
         };
-
-        // --- DADOS E CONSTANTES ---
 
         const ACADEMIC_SCALE = [
             { value: 1, label: 'Insuficiente', color: 'bg-red-600', lightColor: 'bg-red-100', textColor: 'text-red-700', borderColor: 'border-red-200' },
@@ -98,7 +126,7 @@
             { id: 'm9', category: 'Materiais', label: 'CONCLUSÃO (MATERIAL)', guide: 'Fundamentação / Dedutividade.', level: null, comment: '' },
         ];
 
-        // --- COMPONENTES ---
+        // --- COMPONENTES AUXILIARES ---
 
         const AcademicScaleSelector = ({ current, onChange }) => (
             <div className="grid grid-cols-5 gap-1 sm:gap-2 mt-4">
@@ -164,23 +192,11 @@
             <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                 <div className="bg-white rounded-2xl p-8 max-w-2xl w-full shadow-2xl relative">
                     <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Icons.X size={24} /></button>
-                    <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2"><Icons.HelpCircle className="text-blue-600" /> Como Funciona (Modo Piloto)</h2>
-                    <div className="grid md:grid-cols-3 gap-6">
-                        <div className="text-center p-4 bg-slate-50 rounded-xl">
-                            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.FolderOpen size={24} /></div>
-                            <h3 className="font-bold text-slate-800 mb-2">1. Iniciar</h3>
-                            <p className="text-xs text-slate-500">Inicie uma nova avaliação. Não é necessário criar conta.</p>
-                        </div>
-                        <div className="text-center p-4 bg-slate-50 rounded-xl">
-                            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.LinkIcon size={24} /></div>
-                            <h3 className="font-bold text-slate-800 mb-2">2. Upload Local</h3>
-                            <p className="text-xs text-slate-500">Selecione o PDF do aluno que está no seu computador.</p>
-                        </div>
-                        <div className="text-center p-4 bg-slate-50 rounded-xl">
-                            <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.Save size={24} /></div>
-                            <h3 className="font-bold text-slate-800 mb-2">3. Auto-Save</h3>
-                            <p className="text-xs text-slate-500">Seus dados são salvos no navegador. Pode fechar e voltar.</p>
-                        </div>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2"><Icons.HelpCircle className="text-blue-600" /> Como Funciona</h2>
+                    <div className="text-sm text-slate-600 space-y-4">
+                        <p><strong className="text-slate-900">1. Pastas Locais:</strong> No modo piloto (GitHub Pages), a "Pasta" é apenas um organizador virtual. Os dados não são enviados para o Google Drive.</p>
+                        <p><strong className="text-slate-900">2. Onde fica salvo?</strong> Tudo fica salvo no "Local Storage" do seu navegador. Se você fechar a janela e voltar, o botão "Continuar" estará lá.</p>
+                        <p><strong className="text-slate-900">3. Backup:</strong> Recomendamos gerar o PDF final e baixá-lo. Você também pode clicar em "Baixar Backup de Dados" no painel principal para salvar um arquivo JSON de segurança.</p>
                     </div>
                     <div className="mt-8 text-center">
                         <button onClick={onClose} className="bg-slate-900 text-white px-8 py-3 rounded-lg font-bold hover:bg-slate-800">Entendi</button>
@@ -191,11 +207,11 @@
 
         // --- PAINÉIS PRINCIPAIS ---
 
-        const DashboardPanel = ({ hasSavedData, onCreateFolder, onShowHelp, onResume }) => (
+        const DashboardPanel = ({ hasSavedData, onCreateFolder, onShowHelp, onResume, onDownloadBackup }) => (
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-blue-800 to-blue-900"></div>
                 <button onClick={onShowHelp} className="absolute top-6 right-6 flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
-                    <Icons.HelpCircle size={18} /><span>Ajuda</span>
+                    <Icons.HelpCircle size={18} /><span>Ajuda / Onde Salva?</span>
                 </button>
                 <div className="bg-white p-12 rounded-3xl shadow-2xl max-w-2xl w-full text-center relative z-10 border border-white/50 backdrop-blur-sm">
                     <div className="mb-10 flex justify-center transform hover:scale-105 transition-transform duration-500">
@@ -205,9 +221,12 @@
                     <p className="text-slate-500 mb-8 max-w-md mx-auto">Sistema de avaliação unificada de TCCs.<br/><span className="text-xs font-bold uppercase tracking-wider text-green-600 bg-green-50 px-2 py-1 rounded-md mt-2 inline-block">Versão Piloto • GitHub Pages</span></p>
                     <div className="grid gap-4 max-w-md mx-auto">
                         {hasSavedData && (
-                            <button onClick={onResume} className="group w-full py-4 px-6 bg-green-50 text-green-700 border border-green-200 rounded-xl font-bold text-lg flex items-center justify-between transition-all duration-300 hover:bg-green-100 hover:shadow-md">
-                                <div className="flex items-center gap-3"><Icons.Database size={24} className="text-green-600" /><div className="text-left"><span className="block text-sm font-normal text-green-800">Avaliação em andamento</span><span>Continuar Avaliação</span></div></div><Icons.ChevronRight size={20} className="transform transition-transform group-hover:translate-x-1" />
-                            </button>
+                            <div className="space-y-2">
+                                <button onClick={onResume} className="group w-full py-4 px-6 bg-green-50 text-green-700 border border-green-200 rounded-xl font-bold text-lg flex items-center justify-between transition-all duration-300 hover:bg-green-100 hover:shadow-md">
+                                    <div className="flex items-center gap-3"><Icons.Database size={24} className="text-green-600" /><div className="text-left"><span className="block text-sm font-normal text-green-800">Avaliação em andamento</span><span>Continuar Avaliação</span></div></div><Icons.ChevronRight size={20} className="transform transition-transform group-hover:translate-x-1" />
+                                </button>
+                                <button onClick={onDownloadBackup} className="text-xs text-slate-400 hover:text-slate-600 underline">Baixar Backup de Dados (JSON)</button>
+                            </div>
                         )}
                         <button onClick={onCreateFolder} className="group w-full py-4 px-6 bg-slate-900 text-white rounded-xl font-bold text-lg flex items-center justify-between transition-all duration-300 shadow-lg hover:bg-blue-900 hover:shadow-blue-900/20 transform hover:-translate-y-1">
                             <div className="flex items-center gap-3"><Icons.FolderOpen size={24} className="text-blue-400" /><span>Nova Avaliação</span></div><Icons.ChevronRight size={20} className="transform transition-transform group-hover:translate-x-1" />
@@ -223,13 +242,13 @@
             return (
                 <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
                     <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
-                        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><Icons.FolderOpen size={24} className="text-blue-600" /> Nova Pasta de TCC</h2>
-                        <p className="text-sm text-slate-500 mb-6">Defina um identificador para a pasta (Ex: Turma 2024.1). No modo piloto, isso serve para organizar seus relatórios.</p>
-                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nome da Pasta</label>
-                        <input type="text" value={folderName} onChange={(e) => setFolderName(e.target.value)} placeholder="Ex: TCCs Turma 2024.1" className="w-full border border-slate-300 p-3 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><Icons.FolderOpen size={24} className="text-blue-600" /> Nova Sessão de Avaliação</h2>
+                        <p className="text-sm text-slate-500 mb-6">Como estamos na versão Web, esta "pasta" organiza seus arquivos apenas durante esta sessão no navegador.</p>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Identificador da Turma</label>
+                        <input type="text" value={folderName} onChange={(e) => setFolderName(e.target.value)} placeholder="Ex: TCCs 2024.1" className="w-full border border-slate-300 p-3 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 outline-none" />
                         <div className="flex gap-3">
                             <button onClick={onCancel} className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-lg">Cancelar</button>
-                            <button onClick={() => folderName && onConfirm(folderName)} disabled={!folderName} className={`flex-1 py-3 text-white font-bold rounded-lg transition-colors ${folderName ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'}`}>Criar Pasta</button>
+                            <button onClick={() => folderName && onConfirm(folderName)} disabled={!folderName} className={`flex-1 py-3 text-white font-bold rounded-lg transition-colors ${folderName ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'}`}>Criar Sessão</button>
                         </div>
                     </div>
                 </div>
@@ -237,15 +256,15 @@
         };
 
         const ShareLinkPanel = ({ folderName, onManualUpload, onFinish }) => {
-            const link = `https://avaliatcc.ufba.br/u/${folderName.toLowerCase().replace(/\s/g, '-')}`;
-            
-            // Referência oculta para o input de arquivo
             const fileInputRef = useRef(null);
+            const [studentNameInput, setStudentNameInput] = useState("");
 
             const handleFileChange = (event) => {
                 const file = event.target.files[0];
                 if (file) {
-                    onManualUpload(file);
+                    // Passa o nome digitado ou usa o nome do arquivo se estiver vazio
+                    const finalName = studentNameInput.trim() || "Estudante Sem Nome";
+                    onManualUpload(file, finalName);
                 }
             };
 
@@ -253,30 +272,36 @@
                 <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
                     <div className="bg-white p-8 rounded-xl shadow-lg max-w-lg w-full text-center">
                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><Icons.CheckCircle size={32} className="text-green-600" /></div>
-                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Pasta Pronta!</h2>
-                        <p className="text-slate-500 mb-8">No modo piloto, selecione o arquivo PDF para começar.</p>
-                        <div className="bg-blue-50 border border-blue-100 p-6 rounded-xl mb-6 text-left opacity-50 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-white/60 flex items-center justify-center font-bold text-slate-500 z-10">Disponível na Versão Completa (Drive API)</div>
-                            <label className="text-xs font-bold text-blue-800 uppercase mb-2 block flex items-center gap-2"><Icons.LinkIcon size={14} /> Link para Alunos</label>
-                            <div className="flex gap-2"><code className="flex-1 bg-white border border-blue-200 p-3 rounded text-sm text-slate-600 font-mono truncate">{link}</code><button className="bg-blue-200 text-blue-800 p-3 rounded hover:bg-blue-300 transition-colors"><Icons.Copy size={18} /></button></div>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Iniciar Avaliação</h2>
+                        <p className="text-slate-500 mb-8">Insira os dados do aluno para começar.</p>
+
+                        <div className="text-left mb-6">
+                            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nome Completo do Estudante</label>
+                            <input 
+                                type="text" 
+                                value={studentNameInput} 
+                                onChange={(e) => setStudentNameInput(e.target.value)}
+                                placeholder="Digite o nome do aluno aqui..." 
+                                className="w-full border border-slate-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
                         </div>
 
                         {/* Input de Arquivo Oculto */}
-                        <input 
-                            type="file" 
-                            accept="application/pdf" 
-                            ref={fileInputRef} 
-                            onChange={handleFileChange} 
-                            style={{ display: 'none' }} 
-                        />
+                        <input type="file" accept="application/pdf" ref={fileInputRef} onChange={handleFileChange} style={{ display: 'none' }} />
 
                         <button 
-                            onClick={() => fileInputRef.current.click()} 
-                            className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 font-bold hover:bg-slate-50 hover:border-slate-400 transition-all flex items-center justify-center gap-2 mb-6"
+                            onClick={() => {
+                                if(!studentNameInput.trim()) {
+                                    alert("Por favor, digite o nome do aluno antes de carregar o PDF.");
+                                    return;
+                                }
+                                fileInputRef.current.click();
+                            }} 
+                            className={`w-full py-4 border-2 border-dashed rounded-xl font-bold transition-all flex items-center justify-center gap-2 mb-6 ${studentNameInput.trim() ? 'border-blue-300 text-blue-600 hover:bg-blue-50 cursor-pointer' : 'border-slate-200 text-slate-400 cursor-not-allowed'}`}
                         >
-                            <Icons.Upload size={20} /> Carregar PDF do TCC (Upload)
+                            <Icons.Upload size={20} /> Carregar PDF e Iniciar
                         </button>
-                        <button onClick={onFinish} className="text-slate-500 hover:underline text-sm">Voltar ao Início</button>
+                        <button onClick={onFinish} className="text-slate-500 hover:underline text-sm">Voltar</button>
                     </div>
                 </div>
             );
@@ -314,13 +339,8 @@
                                 </div>
                             </div>
                             <div className="mb-4">
-                                <input 
-                                    type="text" 
-                                    value={submission?.studentName} 
-                                    onChange={(e) => updateEvaluation(null, 'studentName', e.target.value)}
-                                    className="text-sm text-slate-700 font-semibold border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none w-full bg-transparent"
-                                    placeholder="Clique para editar o nome do estudante"
-                                />
+                                <p className="text-lg text-slate-800 font-bold">{submission?.studentName}</p>
+                                <p className="text-xs text-slate-400">Clique no nome acima para editar se necessário</p>
                             </div>
                             <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
                                 <button onClick={() => setActiveTab('Formais')} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'Formais' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Aspectos Formais</button>
@@ -328,10 +348,6 @@
                             </div>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-50 scroll-smooth">
-                            <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-lg border border-blue-100 flex items-center gap-2 mb-4">
-                                <Icons.Database size={14} className="shrink-0" />
-                                <p><strong>Modo Piloto:</strong> As alterações são salvas automaticamente no seu navegador.</p>
-                            </div>
                             {filteredEvaluations.map((crit) => {
                                 const currentScale = ACADEMIC_SCALE.find(s => s.value === crit.level);
                                 return (
@@ -366,8 +382,9 @@
 
         const ReportPanel = ({ submission, onBack }) => {
             return (
-                <div className="min-h-screen bg-slate-100 p-4 sm:p-8 flex justify-center overflow-y-auto font-sans">
-                    <div className="bg-white w-full max-w-3xl shadow-xl rounded-none min-h-[29.7cm] p-8 sm:p-12 relative print-container">
+                <div className="min-h-screen bg-slate-100 p-0 sm:p-8 flex justify-center overflow-y-auto font-sans">
+                    {/* AQUI ESTÁ A CLASSE print-container com tamanho A4 configurado no CSS */}
+                    <div className="print-container bg-white w-full max-w-3xl shadow-xl rounded-none relative">
                         <div className="flex items-center justify-between border-b-2 border-slate-800 pb-6 mb-8">
                             <div>
                                 <img src="https://i.ibb.co/WNQBQv0L/logo-avalia-tcc.png" alt="AvaliaTCC Logo" className="h-12 sm:h-16 w-auto object-contain mb-2" />
@@ -455,6 +472,19 @@
                 }, 800);
             };
 
+            const downloadBackup = () => {
+                const savedData = localStorage.getItem('avaliaTCC_draft');
+                if (!savedData) return;
+                const blob = new Blob([savedData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `backup_avaliaTCC_${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+
             const handleResume = () => {
                 const savedData = localStorage.getItem('avaliaTCC_draft');
                 if (savedData) {
@@ -469,9 +499,8 @@
                 setView('share-upload');
             };
 
-            const handleStartEvaluation = (file) => {
+            const handleStartEvaluation = (file, studentName) => {
                 let title = 'Título do Trabalho';
-                let studentName = 'Estudante (Novo)';
                 let fileUrl = null;
 
                 if (file) {
@@ -481,8 +510,8 @@
 
                 const newSubmission = {
                     id: `sub-${Date.now()}`,
-                    studentName: studentName,
-                    folderName: currentFolderName || 'TCCs 2024.1',
+                    studentName: studentName || 'Estudante Sem Nome',
+                    folderName: currentFolderName || 'Sessão Local',
                     title: title,
                     fileUrl: fileUrl,
                     evaluations: JSON.parse(JSON.stringify(INITIAL_CRITERIA))
@@ -495,7 +524,6 @@
             const updateEvaluation = (id, field, value) => {
                 if (!submission) return;
 
-                // Caso especial para atualizar dados do aluno fora da array de avaliações
                 if (id === null && field === 'studentName') {
                     const updatedSubmission = { ...submission, studentName: value };
                     setSubmission(updatedSubmission);
@@ -514,7 +542,7 @@
             return (
                 <React.Fragment>
                     {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
-                    {view === 'dashboard' && <DashboardPanel hasSavedData={hasSavedData} onResume={handleResume} onCreateFolder={() => setView('create-folder')} onShowHelp={() => setShowHelp(true)} />}
+                    {view === 'dashboard' && <DashboardPanel hasSavedData={hasSavedData} onResume={handleResume} onCreateFolder={() => setView('create-folder')} onShowHelp={() => setShowHelp(true)} onDownloadBackup={downloadBackup} />}
                     {view === 'create-folder' && <CreateFolderPanel onConfirm={handleCreateFolder} onCancel={() => setView('dashboard')} />}
                     {view === 'share-upload' && <ShareLinkPanel folderName={currentFolderName} onManualUpload={handleStartEvaluation} onFinish={() => setView('dashboard')} />}
                     {view === 'evaluation' && submission && <EvaluationPanel submission={submission} updateEvaluation={updateEvaluation} saveStatus={saveStatus} lastSavedTime={lastSavedTime} onCancel={() => setView('dashboard')} onFinish={() => setView('report')} />}
