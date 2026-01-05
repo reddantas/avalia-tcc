@@ -94,6 +94,7 @@
             HelpCircle: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></>} />,
             X: (p) => <Icon {...p} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />,
             Database: (p) => <Icon {...p} path={<><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>} />,
+            FileJson: (p) => <Icon {...p} path={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14 2z"/><polyline points="14 2 14 8 20 8"/></>} />,
             Info: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>} />
         };
 
@@ -196,7 +197,7 @@
                     <div className="text-sm text-slate-600 space-y-4">
                         <p><strong className="text-slate-900">1. Pastas Locais:</strong> No modo piloto (GitHub Pages), a "Pasta" é apenas um organizador virtual. Os dados não são enviados para o Google Drive.</p>
                         <p><strong className="text-slate-900">2. Onde fica salvo?</strong> Tudo fica salvo no "Local Storage" do seu navegador. Se você fechar a janela e voltar, o botão "Continuar" estará lá.</p>
-                        <p><strong className="text-slate-900">3. Backup:</strong> Recomendamos gerar o PDF final e baixá-lo. Você também pode clicar em "Baixar Backup de Dados" no painel principal para salvar um arquivo JSON de segurança.</p>
+                        <p><strong className="text-slate-900">3. Portabilidade (Backup/Restore):</strong> Use o botão "Baixar Backup" para salvar os dados em seu computador. Use "Restaurar Backup" para abrir este arquivo em outro computador ou navegador.</p>
                     </div>
                     <div className="mt-8 text-center">
                         <button onClick={onClose} className="bg-slate-900 text-white px-8 py-3 rounded-lg font-bold hover:bg-slate-800">Entendi</button>
@@ -207,35 +208,61 @@
 
         // --- PAINÉIS PRINCIPAIS ---
 
-        const DashboardPanel = ({ hasSavedData, onCreateFolder, onShowHelp, onResume, onDownloadBackup }) => (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-blue-800 to-blue-900"></div>
-                <button onClick={onShowHelp} className="absolute top-6 right-6 flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
-                    <Icons.HelpCircle size={18} /><span>Ajuda / Onde Salva?</span>
-                </button>
-                <div className="bg-white p-12 rounded-3xl shadow-2xl max-w-2xl w-full text-center relative z-10 border border-white/50 backdrop-blur-sm">
-                    <div className="mb-10 flex justify-center transform hover:scale-105 transition-transform duration-500">
-                        <img src="https://i.ibb.co/WNQBQv0L/logo-avalia-tcc.png" alt="AvaliaTCC Logo" className="h-28 w-auto object-contain" />
+        const DashboardPanel = ({ hasSavedData, onCreateFolder, onShowHelp, onResume, onDownloadBackup, onRestore }) => {
+            const restoreRef = useRef(null);
+            
+            return (
+                <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-blue-800 to-blue-900"></div>
+                    <button onClick={onShowHelp} className="absolute top-6 right-6 flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+                        <Icons.HelpCircle size={18} /><span>Ajuda / Onde Salva?</span>
+                    </button>
+                    <div className="bg-white p-12 rounded-3xl shadow-2xl max-w-2xl w-full text-center relative z-10 border border-white/50 backdrop-blur-sm">
+                        <div className="mb-10 flex justify-center transform hover:scale-105 transition-transform duration-500">
+                            <img src="https://i.ibb.co/WNQBQv0L/logo-avalia-tcc.png" alt="AvaliaTCC Logo" className="h-28 w-auto object-contain" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Painel do Avaliador</h2>
+                        <p className="text-slate-500 mb-8 max-w-md mx-auto">Sistema de avaliação unificada de TCCs.<br/><span className="text-xs font-bold uppercase tracking-wider text-green-600 bg-green-50 px-2 py-1 rounded-md mt-2 inline-block">Versão Piloto • GitHub Pages</span></p>
+                        
+                        <div className="grid gap-4 max-w-md mx-auto">
+                            {hasSavedData && (
+                                <div className="space-y-2">
+                                    <button onClick={onResume} className="group w-full py-4 px-6 bg-green-50 text-green-700 border border-green-200 rounded-xl font-bold text-lg flex items-center justify-between transition-all duration-300 hover:bg-green-100 hover:shadow-md">
+                                        <div className="flex items-center gap-3"><Icons.Database size={24} className="text-green-600" /><div className="text-left"><span className="block text-sm font-normal text-green-800">Avaliação em andamento</span><span>Continuar Avaliação</span></div></div><Icons.ChevronRight size={20} className="transform transition-transform group-hover:translate-x-1" />
+                                    </button>
+                                    <div className="flex justify-between gap-2">
+                                        <button onClick={onDownloadBackup} className="flex-1 text-xs text-slate-400 hover:text-slate-600 underline py-2">Baixar Backup (JSON)</button>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            <button onClick={onCreateFolder} className="group w-full py-4 px-6 bg-slate-900 text-white rounded-xl font-bold text-lg flex items-center justify-between transition-all duration-300 shadow-lg hover:bg-blue-900 hover:shadow-blue-900/20 transform hover:-translate-y-1">
+                                <div className="flex items-center gap-3"><Icons.FolderOpen size={24} className="text-blue-400" /><span>Nova Avaliação</span></div><Icons.ChevronRight size={20} className="transform transition-transform group-hover:translate-x-1" />
+                            </button>
+
+                            {/* Botão de Restore */}
+                            <input 
+                                type="file" 
+                                accept=".json" 
+                                ref={restoreRef} 
+                                style={{display: 'none'}} 
+                                onChange={(e) => {
+                                    if(e.target.files && e.target.files[0]) {
+                                        onRestore(e.target.files[0]);
+                                        e.target.value = ''; // Reset para permitir selecionar o mesmo arquivo novamente
+                                    }
+                                }} 
+                            />
+                            <button onClick={() => restoreRef.current.click()} className="group w-full py-4 px-6 bg-white border-2 border-slate-200 text-slate-600 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-300 hover:bg-slate-50 hover:border-slate-300">
+                                <Icons.Upload size={20} className="text-purple-500" />
+                                <span>Restaurar Backup</span>
+                            </button>
+                        </div>
+                        <p className="mt-12 text-xs text-slate-400 font-medium tracking-wider uppercase">Projeto UFBA • Profs. Renato Dantas e Francisco Bertino</p>
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Painel do Avaliador</h2>
-                    <p className="text-slate-500 mb-8 max-w-md mx-auto">Sistema de avaliação unificada de TCCs.<br/><span className="text-xs font-bold uppercase tracking-wider text-green-600 bg-green-50 px-2 py-1 rounded-md mt-2 inline-block">Versão Piloto • GitHub Pages</span></p>
-                    <div className="grid gap-4 max-w-md mx-auto">
-                        {hasSavedData && (
-                            <div className="space-y-2">
-                                <button onClick={onResume} className="group w-full py-4 px-6 bg-green-50 text-green-700 border border-green-200 rounded-xl font-bold text-lg flex items-center justify-between transition-all duration-300 hover:bg-green-100 hover:shadow-md">
-                                    <div className="flex items-center gap-3"><Icons.Database size={24} className="text-green-600" /><div className="text-left"><span className="block text-sm font-normal text-green-800">Avaliação em andamento</span><span>Continuar Avaliação</span></div></div><Icons.ChevronRight size={20} className="transform transition-transform group-hover:translate-x-1" />
-                                </button>
-                                <button onClick={onDownloadBackup} className="text-xs text-slate-400 hover:text-slate-600 underline">Baixar Backup de Dados (JSON)</button>
-                            </div>
-                        )}
-                        <button onClick={onCreateFolder} className="group w-full py-4 px-6 bg-slate-900 text-white rounded-xl font-bold text-lg flex items-center justify-between transition-all duration-300 shadow-lg hover:bg-blue-900 hover:shadow-blue-900/20 transform hover:-translate-y-1">
-                            <div className="flex items-center gap-3"><Icons.FolderOpen size={24} className="text-blue-400" /><span>Nova Avaliação</span></div><Icons.ChevronRight size={20} className="transform transition-transform group-hover:translate-x-1" />
-                        </button>
-                    </div>
-                    <p className="mt-12 text-xs text-slate-400 font-medium tracking-wider uppercase">Projeto UFBA • Profs. Renato Dantas e Francisco Bertino</p>
                 </div>
-            </div>
-        );
+            );
+        };
 
         const CreateFolderPanel = ({ onConfirm, onCancel }) => {
             const [folderName, setFolderName] = useState('');
@@ -339,8 +366,20 @@
                                 </div>
                             </div>
                             <div className="mb-4">
-                                <p className="text-lg text-slate-800 font-bold">{submission?.studentName}</p>
-                                <p className="text-xs text-slate-400">Clique no nome acima para editar se necessário</p>
+                                <input 
+                                    type="text" 
+                                    value={submission?.studentName} 
+                                    onChange={(e) => updateEvaluation(null, 'studentName', e.target.value)}
+                                    className="text-lg text-slate-800 font-bold border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none w-full bg-transparent"
+                                    placeholder="Nome do Estudante"
+                                />
+                                <input 
+                                    type="text" 
+                                    value={submission?.title} 
+                                    onChange={(e) => updateEvaluation(null, 'title', e.target.value)}
+                                    className="text-xs text-slate-500 font-medium border-b border-transparent hover:border-slate-300 focus:border-blue-500 outline-none w-full bg-transparent italic mt-1"
+                                    placeholder="insira aqui o título do TCC"
+                                />
                             </div>
                             <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
                                 <button onClick={() => setActiveTab('Formais')} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'Formais' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Aspectos Formais</button>
@@ -485,6 +524,32 @@
                 document.body.removeChild(a);
             };
 
+            const handleRestore = (file) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        if (!json.evaluations || !json.id) {
+                            alert("Erro: O arquivo selecionado não parece ser um backup válido do AvaliaTCC.");
+                            return;
+                        }
+                        
+                        if (localStorage.getItem('avaliaTCC_draft') && !confirm("Atenção: Restaurar um backup irá substituir a avaliação atual. Deseja continuar?")) {
+                            return;
+                        }
+
+                        localStorage.setItem('avaliaTCC_draft', JSON.stringify(json));
+                        setSubmission(json);
+                        setSaveStatus('saved');
+                        setView('evaluation');
+                    } catch (error) {
+                        alert("Erro ao processar o arquivo de backup.");
+                        console.error(error);
+                    }
+                };
+                reader.readAsText(file);
+            };
+
             const handleResume = () => {
                 const savedData = localStorage.getItem('avaliaTCC_draft');
                 if (savedData) {
@@ -524,8 +589,8 @@
             const updateEvaluation = (id, field, value) => {
                 if (!submission) return;
 
-                if (id === null && field === 'studentName') {
-                    const updatedSubmission = { ...submission, studentName: value };
+                if (id === null) {
+                    const updatedSubmission = { ...submission, [field]: value };
                     setSubmission(updatedSubmission);
                     saveToLocal(updatedSubmission);
                     return;
@@ -542,7 +607,7 @@
             return (
                 <React.Fragment>
                     {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
-                    {view === 'dashboard' && <DashboardPanel hasSavedData={hasSavedData} onResume={handleResume} onCreateFolder={() => setView('create-folder')} onShowHelp={() => setShowHelp(true)} onDownloadBackup={downloadBackup} />}
+                    {view === 'dashboard' && <DashboardPanel hasSavedData={hasSavedData} onResume={handleResume} onCreateFolder={() => setView('create-folder')} onShowHelp={() => setShowHelp(true)} onDownloadBackup={downloadBackup} onRestore={handleRestore} />}
                     {view === 'create-folder' && <CreateFolderPanel onConfirm={handleCreateFolder} onCancel={() => setView('dashboard')} />}
                     {view === 'share-upload' && <ShareLinkPanel folderName={currentFolderName} onManualUpload={handleStartEvaluation} onFinish={() => setView('dashboard')} />}
                     {view === 'evaluation' && submission && <EvaluationPanel submission={submission} updateEvaluation={updateEvaluation} saveStatus={saveStatus} lastSavedTime={lastSavedTime} onCancel={() => setView('dashboard')} onFinish={() => setView('report')} />}
