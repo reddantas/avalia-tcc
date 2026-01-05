@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AvaliaTCC - UFBA</title>
+    
+    <!-- React & ReactDOM (Core) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (Para entender o código React no navegador) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS (Estilos) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Ícone da Aba -->
+    <link rel="icon" href="https://i.ibb.co/WNQBQv0L/logo-avalia-tcc.png" type="image/png">
+
+    <style>
+        /* Ajustes finos para impressão */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .print-container { box-shadow: none; border: none; margin: 0; padding: 0; }
+        }
+        /* Fonte acadêmica para o relatório */
+        .font-serif { font-family: 'Times New Roman', Times, serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ÍCONES (SVG Inline para não depender de pacotes externos) ---
+        const Icon = ({ path, size = 20, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" stroke="currentColor" 
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
+                className={className}
+            >
+                {path}
+            </svg>
+        );
+
+        // Definição dos caminhos dos ícones usados
+        const Icons = {
+            FileText: (p) => <Icon {...p} path={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></>} />,
+            Maximize2: (p) => <Icon {...p} path={<><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></>} />,
+            Save: (p) => <Icon {...p} path={<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>} />,
+            CheckCircle: (p) => <Icon {...p} path={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>} />,
+            Cloud: (p) => <Icon {...p} path={<><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></>} />,
+            RefreshCw: (p) => <Icon {...p} path={<><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></>} />,
+            AlertTriangle: (p) => <Icon {...p} path={<><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>} />,
+            FolderOpen: (p) => <Icon {...p} path={<><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></>} />,
+            BarChart3: (p) => <Icon {...p} path={<><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></>} />,
+            ArrowLeft: (p) => <Icon {...p} path={<><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></>} />,
+            Download: (p) => <Icon {...p} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>} />,
+            BookOpen: (p) => <Icon {...p} path={<><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>} />,
+            ChevronRight: (p) => <Icon {...p} path={<><polyline points="9 18 15 12 9 6"/></>} />,
+            LogIn: (p) => <Icon {...p} path={<><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></>} />,
+            Info: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>} />,
+            LinkIcon: (p) => <Icon {...p} path={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>} />,
+            Upload: (p) => <Icon {...p} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>} />,
+            Copy: (p) => <Icon {...p} path={<><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>} />,
+            HelpCircle: (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></>} />,
+            X: (p) => <Icon {...p} path={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />,
+            Database: (p) => <Icon {...p} path={<><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>} />
+        };
+
+        // --- DADOS E CONSTANTES ---
+
+        const ACADEMIC_SCALE = [
+            { value: 1, label: 'Insuficiente', color: 'bg-red-600', lightColor: 'bg-red-100', textColor: 'text-red-700', borderColor: 'border-red-200' },
+            { value: 2, label: 'Regular', color: 'bg-orange-500', lightColor: 'bg-orange-100', textColor: 'text-orange-800', borderColor: 'border-orange-200' },
+            { value: 3, label: 'Bom', color: 'bg-yellow-500', lightColor: 'bg-yellow-100', textColor: 'text-yellow-800', borderColor: 'border-yellow-200' },
+            { value: 4, label: 'Muito Bom', color: 'bg-blue-600', lightColor: 'bg-blue-100', textColor: 'text-blue-800', borderColor: 'border-blue-200' },
+            { value: 5, label: 'Excelente', color: 'bg-green-600', lightColor: 'bg-green-100', textColor: 'text-green-800', borderColor: 'border-green-200' },
+        ];
+
+        const INITIAL_CRITERIA = [
+            { id: 'f1', category: 'Formais', label: 'TÍTULO', guide: 'Menor resumo / delimitação do tema / corte epistemológico.', level: null, comment: '' },
+            { id: 'f2', category: 'Formais', label: 'RESUMO', guide: 'Adequação / referência ao trabalho.', level: null, comment: '' },
+            { id: 'f3', category: 'Formais', label: 'SUMÁRIO', guide: 'Equilíbrio / subdivisão.', level: null, comment: '' },
+            { id: 'f4', category: 'Formais', label: 'INTRODUÇÃO', guide: 'Pertinente / referenciada.', level: null, comment: '' },
+            { id: 'f5', category: 'Formais', label: 'FORMATAÇÃO', guide: 'ABNT / Aparência.', level: null, comment: '' },
+            { id: 'f6', category: 'Formais', label: 'REDAÇÃO', guide: 'Linguagem / português / abreviaturas.', level: null, comment: '' },
+            { id: 'f7', category: 'Formais', label: 'CITAÇÕES', guide: 'Quantidade / método / pertinência.', level: null, comment: '' },
+            { id: 'f8', category: 'Formais', label: 'BIBLIOGRAFIA', guide: 'Consistência / completude.', level: null, comment: '' },
+            { id: 'f9', category: 'Formais', label: 'CONCLUSÃO (FORMAL)', guide: 'Concisão / objetividade / clareza.', level: null, comment: '' },
+            { id: 'm1', category: 'Materiais', label: 'TEMA', guide: 'Atualidade / relevância.', level: null, comment: '' },
+            { id: 'm2', category: 'Materiais', label: 'ABORDAGEM', guide: 'Apropriada / técnica.', level: null, comment: '' },
+            { id: 'm3', category: 'Materiais', label: 'FIO CONDUTOR', guide: 'Alinhamento.', level: null, comment: '' },
+            { id: 'm4', category: 'Materiais', label: 'CONCATENAÇÃO', guide: 'Articulação / dedutividade.', level: null, comment: '' },
+            { id: 'm5', category: 'Materiais', label: 'FUNDAMENTAÇÃO', guide: 'Consistência teórica e argumentativa.', level: null, comment: '' },
+            { id: 'm6', category: 'Materiais', label: 'FIDELIDADE AO TEMA', guide: 'Pertinência do conteúdo / apropriação de conceitos.', level: null, comment: '' },
+            { id: 'm7', category: 'Materiais', label: 'APRESENTAÇÃO', guide: 'Desenvoltura / segurança / defesa do trabalho.', level: null, comment: '' },
+            { id: 'm8', category: 'Materiais', label: 'FONTES', guide: 'Pertinência e adequação.', level: null, comment: '' },
+            { id: 'm9', category: 'Materiais', label: 'CONCLUSÃO (MATERIAL)', guide: 'Fundamentação / Dedutividade.', level: null, comment: '' },
+        ];
+
+        // --- COMPONENTES ---
+
+        const AcademicScaleSelector = ({ current, onChange }) => (
+            <div className="grid grid-cols-5 gap-1 sm:gap-2 mt-4">
+                {ACADEMIC_SCALE.map((item) => {
+                    const isSelected = current === item.value;
+                    return (
+                        <button
+                            key={item.value}
+                            onClick={() => onChange(item.value)}
+                            className={`relative p-2 rounded-lg transition-all duration-200 border flex flex-col items-center justify-center gap-1 ${isSelected ? item.color + ' text-white border-transparent shadow-md transform scale-105' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}
+                            title={item.label}
+                        >
+                            <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-center ${isSelected ? 'text-white' : 'text-slate-500'}`}>
+                                {item.label}
+                            </span>
+                            {isSelected && <Icons.CheckCircle size={12} className="absolute top-1 right-1 text-white opacity-80 hidden sm:block" />}
+                        </button>
+                    );
+                })}
+            </div>
+        );
+
+        const ReportChart = ({ data }) => {
+            const calculatePercent = (category) => {
+                const items = data.filter(c => c.category === category && c.level !== null);
+                if (items.length === 0) return 0;
+                const total = items.reduce((acc, curr) => acc + (curr.level || 0), 0);
+                return Math.round((total / (items.length * 5)) * 100);
+            };
+
+            const formaisPct = calculatePercent('Formais');
+            const materiaisPct = calculatePercent('Materiais');
+
+            const ChartBar = ({ label, pct, colorClass }) => (
+                <div className="mb-4">
+                    <div className="flex justify-between text-xs uppercase font-bold text-slate-500 mb-1">
+                        <span>{label}</span>
+                        <span>{pct > 0 ? `${pct}% Aproveitamento` : 'Não avaliado'}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+                        <div className={`h-full ${colorClass} transition-all duration-1000 ease-out`} style={{ width: `${pct}%` }}></div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 my-6">
+                    <div className="flex items-center gap-2 mb-4 text-slate-700 font-bold">
+                        <Icons.BarChart3 size={20} />
+                        <h3>Desempenho por Competência</h3>
+                    </div>
+                    <ChartBar label="Aspectos Formais" pct={formaisPct} colorClass="bg-blue-500" />
+                    <ChartBar label="Aspectos Materiais" pct={materiaisPct} colorClass="bg-green-500" />
+                    <div className="mt-5 pt-4 border-t border-slate-200 text-[11px] text-slate-500 leading-relaxed">
+                        <p className="font-bold uppercase tracking-wider mb-1 text-slate-400">Critério de Cálculo:</p>
+                        <p>O índice percentual representa o aproveitamento obtido em relação à pontuação máxima possível para cada eixo. O cálculo considera a média dos conceitos atribuídos, seguindo a escala: <span className="font-semibold text-green-700 ml-1">Excelente (5 pts)</span>, <span className="font-semibold text-blue-700 ml-1">Muito Bom (4 pts)</span>, <span className="font-semibold text-yellow-700 ml-1">Bom (3 pts)</span>, <span className="font-semibold text-orange-700 ml-1">Regular (2 pts)</span> e <span className="font-semibold text-red-700 ml-1">Insuficiente (1 pt)</span>.</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const HelpModal = ({ onClose }) => (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl p-8 max-w-2xl w-full shadow-2xl relative">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Icons.X size={24} /></button>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2"><Icons.HelpCircle className="text-blue-600" /> Como Funciona (Modo Piloto)</h2>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        <div className="text-center p-4 bg-slate-50 rounded-xl">
+                            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.FolderOpen size={24} /></div>
+                            <h3 className="font-bold text-slate-800 mb-2">1. Iniciar</h3>
+                            <p className="text-xs text-slate-500">Inicie uma nova avaliação. Não é necessário criar conta.</p>
+                        </div>
+                        <div className="text-center p-4 bg-slate-50 rounded-xl">
+                            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.LinkIcon size={24} /></div>
+                            <h3 className="font-bold text-slate-800 mb-2">2. Upload Local</h3>
+                            <p className="text-xs text-slate-500">Tenha o PDF do aluno no seu computador.</p>
+                        </div>
+                        <div className="text-center p-4 bg-slate-50 rounded-xl">
+                            <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.Save size={24} /></div>
+                            <h3 className="font-bold text-slate-800 mb-2">3. Auto-Save</h3>
+                            <p className="text-xs text-slate-500">Seus dados são salvos no navegador. Pode fechar e voltar.</p>
+                        </div>
+                    </div>
+                    <div className="mt-8 text-center">
+                        <button onClick={onClose} className="bg-slate-900 text-white px-8 py-3 rounded-lg font-bold hover:bg-slate-800">Entendi</button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // --- PAINÉIS PRINCIPAIS ---
+
+        const DashboardPanel = ({ hasSavedData, onCreateFolder, onShowHelp, onResume }) => (
+            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-600 via-blue-800 to-blue-900"></div>
+                <button onClick={onShowHelp} className="absolute top-6 right-6 flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+                    <Icons.HelpCircle size={18} /><span>Ajuda</span>
+                </button>
+                <div className="bg-white p-12 rounded-3xl shadow-2xl max-w-2xl w-full text-center relative z-10 border border-white/50 backdrop-blur-sm">
+                    <div className="mb-10 flex justify-center transform hover:scale-105 transition-transform duration-500">
+                        <img src="https://i.ibb.co/WNQBQv0L/logo-avalia-tcc.png" alt="AvaliaTCC Logo" className="h-28 w-auto object-contain" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Painel do Avaliador</h2>
+                    <p className="text-slate-500 mb-8 max-w-md mx-auto">Sistema de avaliação unificada de TCCs.<br/><span className="text-xs font-bold uppercase tracking-wider text-green-600 bg-green-50 px-2 py-1 rounded-md mt-2 inline-block">Versão Piloto • GitHub Pages</span></p>
+                    <div className="grid gap-4 max-w-md mx-auto">
+                        {hasSavedData && (
+                            <button onClick={onResume} className="group w-full py-4 px-6 bg-green-50 text-green-700 border border-green-200 rounded-xl font-bold text-lg flex items-center justify-between transition-all duration-300 hover:bg-green-100 hover:shadow-md">
+                                <div className="flex items-center gap-3"><Icons.Database size={24} className="text-green-600" /><div className="text-left"><span className="block text-sm font-normal text-green-800">Avaliação em andamento</span><span>Continuar Avaliação</span></div></div><Icons.ChevronRight size={20} className="transform transition-transform group-hover:translate-x-1" />
+                            </button>
+                        )}
+                        <button onClick={onCreateFolder} className="group w-full py-4 px-6 bg-slate-900 text-white rounded-xl font-bold text-lg flex items-center justify-between transition-all duration-300 shadow-lg hover:bg-blue-900 hover:shadow-blue-900/20 transform hover:-translate-y-1">
+                            <div className="flex items-center gap-3"><Icons.FolderOpen size={24} className="text-blue-400" /><span>Nova Avaliação</span></div><Icons.ChevronRight size={20} className="transform transition-transform group-hover:translate-x-1" />
+                        </button>
+                    </div>
+                    <p className="mt-12 text-xs text-slate-400 font-medium tracking-wider uppercase">Projeto UFBA • Profs. Renato Dantas e Francisco Bertino</p>
+                </div>
+            </div>
+        );
+
+        const CreateFolderPanel = ({ onConfirm, onCancel }) => {
+            const [folderName, setFolderName] = useState('');
+            return (
+                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
+                    <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
+                        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><Icons.FolderOpen size={24} className="text-blue-600" /> Nova Pasta de TCC</h2>
+                        <p className="text-sm text-slate-500 mb-6">Defina um identificador para a pasta (Ex: Turma 2024.1). No modo piloto, isso serve para organizar seus relatórios.</p>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nome da Pasta</label>
+                        <input type="text" value={folderName} onChange={(e) => setFolderName(e.target.value)} placeholder="Ex: TCCs Turma 2024.1" className="w-full border border-slate-300 p-3 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <div className="flex gap-3">
+                            <button onClick={onCancel} className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-lg">Cancelar</button>
+                            <button onClick={() => folderName && onConfirm(folderName)} disabled={!folderName} className={`flex-1 py-3 text-white font-bold rounded-lg transition-colors ${folderName ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'}`}>Criar Pasta</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ShareLinkPanel = ({ folderName, onManualUpload, onFinish }) => {
+            const link = `https://avaliatcc.ufba.br/u/${folderName.toLowerCase().replace(/\s/g, '-')}`;
+            return (
+                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
+                    <div className="bg-white p-8 rounded-xl shadow-lg max-w-lg w-full text-center">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"><Icons.CheckCircle size={32} className="text-green-600" /></div>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-2">Pasta Pronta!</h2>
+                        <p className="text-slate-500 mb-8">No modo piloto, você pode gerenciar os arquivos manualmente.</p>
+                        <div className="bg-blue-50 border border-blue-100 p-6 rounded-xl mb-6 text-left opacity-50 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-white/60 flex items-center justify-center font-bold text-slate-500 z-10">Disponível na Versão Completa (Drive API)</div>
+                            <label className="text-xs font-bold text-blue-800 uppercase mb-2 block flex items-center gap-2"><Icons.LinkIcon size={14} /> Link para Alunos</label>
+                            <div className="flex gap-2"><code className="flex-1 bg-white border border-blue-200 p-3 rounded text-sm text-slate-600 font-mono truncate">{link}</code><button className="bg-blue-200 text-blue-800 p-3 rounded hover:bg-blue-300 transition-colors"><Icons.Copy size={18} /></button></div>
+                        </div>
+                        <button onClick={onManualUpload} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 font-bold hover:bg-slate-50 hover:border-slate-400 transition-all flex items-center justify-center gap-2 mb-6"><Icons.Upload size={20} /> Fazer Upload Manualmente (Professor)</button>
+                        <button onClick={onFinish} className="text-slate-500 hover:underline text-sm">Voltar ao Início</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const EvaluationPanel = ({ submission, updateEvaluation, saveStatus, lastSavedTime, onCancel, onFinish }) => {
+            const [activeTab, setActiveTab] = useState('Formais');
+            const filteredEvaluations = submission.evaluations.filter(c => c.category === activeTab);
+
+            return (
+                <div className="flex flex-col lg:flex-row h-screen bg-slate-200 overflow-hidden font-sans text-slate-800">
+                    <div className="h-1/3 lg:h-full lg:w-1/2 bg-slate-700 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-500">
+                        <div className="h-12 bg-slate-800 flex items-center justify-between px-4 text-slate-300 shadow-md z-10 shrink-0">
+                            <div className="flex items-center gap-2 overflow-hidden"><Icons.FileText size={16} className="shrink-0" /><span className="font-medium text-sm truncate">{submission?.title}.pdf</span></div>
+                            <button className="hover:text-white transition"><Icons.Maximize2 size={16} /></button>
+                        </div>
+                        <div className="flex-1 flex items-center justify-center bg-slate-600 relative overflow-hidden">
+                            <div className="text-center opacity-40 text-white p-4">
+                                <Icons.FileText size={64} className="mx-auto mb-2" />
+                                <p>Visualizador de PDF Nativo</p>
+                                <p className="text-xs mt-2">(Simulação: O PDF estaria carregado aqui)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-2/3 lg:h-full lg:w-1/2 flex flex-col bg-white shadow-2xl relative z-10">
+                        <div className="px-6 py-4 border-b border-slate-200 bg-white shadow-sm z-20 shrink-0">
+                            <div className="flex justify-between items-start mb-1">
+                                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-tight">Avaliação de TCC</h2>
+                                <div className={`flex items-center gap-2 text-xs px-3 py-1 rounded-full transition-colors ${saveStatus === 'saving' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-700'}`}>
+                                    {saveStatus === 'saving' ? <Icons.RefreshCw size={12} className="animate-spin" /> : <Icons.Cloud size={12} />}
+                                    <span className="font-medium">{saveStatus === 'saving' ? 'Salvando...' : `Salvo às ${lastSavedTime}`}</span>
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-500 mb-4">{submission?.studentName}</p>
+                            <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
+                                <button onClick={() => setActiveTab('Formais')} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'Formais' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Aspectos Formais</button>
+                                <button onClick={() => setActiveTab('Materiais')} className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${activeTab === 'Materiais' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Aspectos Materiais</button>
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-50 scroll-smooth">
+                            <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-lg border border-blue-100 flex items-center gap-2 mb-4">
+                                <Icons.Database size={14} className="shrink-0" />
+                                <p><strong>Modo Piloto:</strong> As alterações são salvas automaticamente no seu navegador.</p>
+                            </div>
+                            {filteredEvaluations.map((crit) => {
+                                const currentScale = ACADEMIC_SCALE.find(s => s.value === crit.level);
+                                return (
+                                    <div key={crit.id} className={`bg-white p-5 rounded-xl border transition-all duration-300 shadow-sm ${currentScale ? currentScale.borderColor : 'border-slate-200'} ${currentScale ? 'border-l-4' : 'border-l-0'} ${currentScale && crit.level === 1 ? 'border-l-red-500' : ''} ${currentScale && crit.level === 5 ? 'border-l-green-500' : ''}`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-bold text-slate-800 text-base">{crit.label}</h3>
+                                            {currentScale ? (
+                                                <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${currentScale.lightColor} ${currentScale.textColor}`}>{currentScale.label}</span>
+                                            ) : (
+                                                <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-1 rounded-md">Pendente</span>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-slate-500 mb-4 italic flex gap-2 items-start"><Icons.Info size={14} className="text-blue-400 mt-0.5 shrink-0" /> {crit.guide}</p>
+                                        <AcademicScaleSelector current={crit.level} onChange={(val) => updateEvaluation(crit.id, 'level', val)} />
+                                        <div className="mt-5 relative">
+                                            <label className="text-[10px] font-bold text-slate-400 uppercase absolute -top-2 left-2 bg-white px-1 z-10">Comentários do Avaliador</label>
+                                            <textarea value={crit.comment} onChange={(e) => updateEvaluation(crit.id, 'comment', e.target.value)} placeholder="Escreva suas observações para o aluno..." className="w-full text-sm border border-slate-300 rounded-lg p-3 pt-4 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none h-24 bg-white" />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            <div className="h-12"></div>
+                        </div>
+                        <div className="p-4 bg-white border-t border-slate-200 flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 shrink-0">
+                            <button onClick={onCancel} className="text-slate-500 text-sm hover:text-slate-800">Sair / Voltar</button>
+                            <button onClick={onFinish} className="bg-slate-900 text-white px-6 py-3 rounded-lg shadow hover:bg-slate-800 font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><Icons.Save size={16} /> Gerar Relatório Final</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ReportPanel = ({ submission, onBack }) => {
+            return (
+                <div className="min-h-screen bg-slate-100 p-4 sm:p-8 flex justify-center overflow-y-auto font-sans">
+                    <div className="bg-white w-full max-w-3xl shadow-xl rounded-none min-h-[29.7cm] p-8 sm:p-12 relative print-container">
+                        <div className="flex items-center justify-between border-b-2 border-slate-800 pb-6 mb-8">
+                            <div>
+                                <img src="https://i.ibb.co/WNQBQv0L/logo-avalia-tcc.png" alt="AvaliaTCC Logo" className="h-12 sm:h-16 w-auto object-contain mb-2" />
+                                <p className="text-xs text-slate-500 uppercase tracking-wide">Universidade Federal da Bahia</p>
+                            </div>
+                            <div className="text-right pt-4 hidden sm:block">
+                                <h2 className="text-xl font-serif text-slate-700 font-bold">Relatório de Avaliação</h2>
+                                <p className="text-sm text-slate-400">Trabalho de Conclusão de Curso</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 bg-slate-50 p-4 rounded border border-slate-100">
+                            <div className="sm:col-span-2">
+                                <p className="text-xs uppercase text-slate-400 font-bold mb-1">Estudante</p>
+                                <p className="text-lg font-bold text-slate-800">{submission?.studentName}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs uppercase text-slate-400 font-bold mb-1">Data</p>
+                                <p className="text-slate-800">{new Date().toLocaleDateString()}</p>
+                            </div>
+                            <div className="sm:col-span-3">
+                                <p className="text-xs uppercase text-slate-400 font-bold mb-1">Título do Trabalho</p>
+                                <p className="text-slate-800 italic font-serif">"{submission?.title}"</p>
+                            </div>
+                        </div>
+                        {submission && <ReportChart data={submission.evaluations} />}
+                        <div className="space-y-8 mt-8">
+                            {['Formais', 'Materiais'].map((cat) => (
+                                <div key={cat}>
+                                    <h3 className="text-sm font-bold uppercase text-white bg-slate-800 px-3 py-1 inline-block mb-4 rounded-sm">Aspectos {cat}</h3>
+                                    <div className="divide-y divide-slate-100">
+                                        {submission?.evaluations.filter(c => c.category === cat).map((crit) => {
+                                            const scale = ACADEMIC_SCALE.find(s => s.value === crit.level);
+                                            return (
+                                                <div key={crit.id} className="py-4">
+                                                    <div className="flex justify-between items-baseline mb-2">
+                                                        <span className="font-bold text-slate-700 text-sm w-1/3">{crit.label}</span>
+                                                        <div className="w-2/3 flex justify-end">
+                                                            {scale ? <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${scale.lightColor} ${scale.textColor}`}>{scale.label}</span> : <span className="text-xs text-slate-300">Não avaliado</span>}
+                                                        </div>
+                                                    </div>
+                                                    {crit.comment && (
+                                                        <div className="ml-0 sm:ml-[33%] bg-slate-50 p-3 rounded text-sm text-slate-600 italic border-l-2 border-slate-300 font-serif">"{crit.comment}"</div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-20 pt-8 border-t border-slate-300 flex justify-between items-end">
+                            <div className="text-xs text-slate-400 w-1/2"><p>Gerado pelo Sistema AvaliaTCC</p><p>Salvo em: {submission?.folderName}</p></div>
+                            <div className="text-center w-1/2"><div className="border-b border-slate-800 mb-2 w-2/3 mx-auto"></div><p className="font-bold text-sm text-slate-800">Assinatura do Avaliador</p></div>
+                        </div>
+                        <div className="fixed bottom-8 right-8 flex gap-3 no-print">
+                            <button onClick={onBack} className="bg-white text-slate-700 px-4 py-3 rounded-full shadow-lg hover:bg-slate-50 border border-slate-200" title="Voltar"><Icons.ArrowLeft size={20} /></button>
+                            <button onClick={() => window.print()} className="bg-blue-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 font-bold flex items-center gap-2"><Icons.Download size={20} /> Salvar PDF</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- APP PRINCIPAL ---
+
+        function App() {
+            const [view, setView] = useState('dashboard');
+            const [showHelp, setShowHelp] = useState(false);
+            const [submission, setSubmission] = useState(null);
+            const [saveStatus, setSaveStatus] = useState('idle');
+            const [lastSavedTime, setLastSavedTime] = useState('');
+            const [currentFolderName, setCurrentFolderName] = useState('');
+
+            useEffect(() => {
+                const savedData = localStorage.getItem('avaliaTCC_draft');
+                if (savedData) { /* Carregado */ }
+            }, []);
+
+            const saveToLocal = (data) => {
+                setSaveStatus('saving');
+                setTimeout(() => {
+                    localStorage.setItem('avaliaTCC_draft', JSON.stringify(data));
+                    setSaveStatus('saved');
+                    setLastSavedTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+                }, 800);
+            };
+
+            const handleResume = () => {
+                const savedData = localStorage.getItem('avaliaTCC_draft');
+                if (savedData) {
+                    setSubmission(JSON.parse(savedData));
+                    setView('evaluation');
+                    setLastSavedTime(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+                }
+            };
+
+            const handleCreateFolder = (name) => {
+                setCurrentFolderName(name);
+                setView('share-upload');
+            };
+
+            const handleStartEvaluation = () => {
+                const newSubmission = {
+                    id: `sub-${Date.now()}`,
+                    studentName: 'Estudante (Novo)',
+                    folderName: currentFolderName || 'TCCs 2024.1',
+                    title: 'Título do Trabalho',
+                    evaluations: JSON.parse(JSON.stringify(INITIAL_CRITERIA))
+                };
+                setSubmission(newSubmission);
+                saveToLocal(newSubmission);
+                setView('evaluation');
+            };
+
+            const updateEvaluation = (id, field, value) => {
+                if (!submission) return;
+                const updatedEvaluations = submission.evaluations.map(c => c.id === id ? { ...c, [field]: value } : c);
+                const updatedSubmission = { ...submission, evaluations: updatedEvaluations };
+                setSubmission(updatedSubmission);
+                saveToLocal(updatedSubmission);
+            };
+
+            const hasSavedData = !!localStorage.getItem('avaliaTCC_draft');
+
+            return (
+                <React.Fragment>
+                    {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+                    {view === 'dashboard' && <DashboardPanel hasSavedData={hasSavedData} onResume={handleResume} onCreateFolder={() => setView('create-folder')} onShowHelp={() => setShowHelp(true)} />}
+                    {view === 'create-folder' && <CreateFolderPanel onConfirm={handleCreateFolder} onCancel={() => setView('dashboard')} />}
+                    {view === 'share-upload' && <ShareLinkPanel folderName={currentFolderName} onManualUpload={handleStartEvaluation} onFinish={() => setView('dashboard')} />}
+                    {view === 'evaluation' && submission && <EvaluationPanel submission={submission} updateEvaluation={updateEvaluation} saveStatus={saveStatus} lastSavedTime={lastSavedTime} onCancel={() => setView('dashboard')} onFinish={() => setView('report')} />}
+                    {view === 'report' && submission && <ReportPanel submission={submission} onBack={() => setView('evaluation')} />}
+                </React.Fragment>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
