@@ -38,4 +38,5 @@ Este projeto está licenciado sob a GNU General Public License v3.0 (GPLv3). Iss
 
 Coordenação: Prof. Renato Dantas & Prof. Francisco Bertino
 
-Instituição: Universidade Federal da Bahia (UFBA
+Instituição: Faculdade de Direito Universidade Federal da Bahia (UFBA)
+V1. 2026
